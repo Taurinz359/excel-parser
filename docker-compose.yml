@@ -1,0 +1,56 @@
+version: "3.1"
+services:
+    server:
+        image: nginx:alpine
+        working_dir: /application
+        volumes:
+            - ./:/var/www
+            - ./deploy/nginx/local:/etc/nginx/conf.d
+        ports:
+            - "127.0.0.1:1500:80"
+        networks:
+            - parser
+
+    app:
+        build:
+            context: ./
+            dockerfile: Dockerfile
+        working_dir: /var/www
+        volumes:
+            - ./:/var/www
+            - ./deploy/php/uploads.ini:/usr/local/etc/php/php.ini
+        networks:
+            - parser
+
+    pgsql:
+        image: postgres:15-alpine
+        environment:
+            PGPASSWORD: '${DB_PASSWORD:-secret}'
+            POSTGRES_DB: '${DB_DATABASE}'
+            POSTGRES_USER: '${DB_USERNAME}'
+            POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+        volumes:
+            - pgsql-data:/var/lib/postgresql/data
+        ports:
+            - '127.0.0.1:5451:5432'
+        networks:
+            - parser
+
+    cache:
+        image: redis:6.0.8
+        volumes:
+            - cache-data:/data
+        ports:
+            - "6353:6379"
+        networks:
+            - parser
+
+volumes:
+    pgsql-data:
+        driver: local
+    cache-data:
+        driver: local
+
+networks:
+    parser:
+        driver: bridge
