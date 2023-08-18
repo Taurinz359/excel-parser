@@ -22,6 +22,8 @@ Route::get('/', function () {
 Route::prefix('/excel')
     ->middleware('auth.basic')
     ->name('excel.')
+    ->controller(ExcelController::class)
     ->group(function () {
-        Route::post('/upload', [ExcelController::class, 'upload'])->name('upload');
+        Route::post('/upload', 'upload')->name('upload');
+        Route::get('/', 'index')->name('index');
     });

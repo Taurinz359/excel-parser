@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Models\Row;
+use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -18,6 +20,8 @@ class ParseExcelFile implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
+    private const CHUNK_SIZE = 1000;
+
     public function __construct(private readonly string $filePath, private readonly string $hash)
     {
     }
@@ -29,14 +33,22 @@ class ParseExcelFile implements ShouldQueue
         $key = 'excel_import:' . $this->hash;
         $excelFile = $storage->path($this->filePath);
 
+        \Db::beginTransaction();
         (new FastExcel())->import($excelFile, function ($line) use (&$processedRowCount, $key) {
-                $chunkSize = 1000;
+            Redis::set($key, $processedRowCount);
+            $processedRowCount++;
 
-                $processedRowCount++;
+            Row::create([
+                'excel_id' => $line['id'],
+                'name' => $line['name'],
+                'date' => Carbon::parse($line['date'])->format('d.m.Y')
+            ])->save();
 
-            if ($processedRowCount % $chunkSize === 0) {
-                Redis::set($key, $processedRowCount);
+            if ($processedRowCount % self::CHUNK_SIZE === 0) {
+                \DB::commit();
+                \DB::beginTransaction();
             }
         });
+        \DB::commit();
     }
 }
