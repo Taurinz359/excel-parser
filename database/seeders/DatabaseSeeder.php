@@ -21,6 +21,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         Row::factory()->count(10)->create();
-        Row::factory()->count(10)->create(['data' => '1971-05-09']);
+        Row::factory()->count(10)->create(['date' => '1971-05-09']);
     }
 }
