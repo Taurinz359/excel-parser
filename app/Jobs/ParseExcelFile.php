@@ -34,9 +34,9 @@ class ParseExcelFile implements ShouldQueue
 
                 $processedRowCount++;
 
-                if ($processedRowCount % $chunkSize === 0) {
-                    Redis::set($key, $processedRowCount);
-                }
-            });
+            if ($processedRowCount % $chunkSize === 0) {
+                Redis::set($key, $processedRowCount);
+            }
+        });
     }
 }
